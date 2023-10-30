@@ -1,11 +1,24 @@
 import mirror
+import mirror.structure
 
 import os
 import time
+import logging
 from pathlib import Path
 import subprocess
 
-def rsync(package: mirror.structure.Package):
+module = "sync"
+name = "rsync"
+
+class Options(mirror.structure.Options):
+    ffts: bool
+    fftsfile: str
+
+def entry(package: mirror.structure.Package, options: Options, logger: logging.Logger):
+    mirror.status.save()
+    return
+
+def rsync(package: mirror.structure.Package, logger: logging.Logger):
     """Sync package to mirror"""
     os.setgid(mirror.conf.gid)
     os.setuid(mirror.conf.uid)
@@ -30,7 +43,7 @@ def rsync(package: mirror.structure.Package):
         package.setstatus("ERROR")
 
 
-def ffts(package: mirror.structure.Package):
+def ffts(package: mirror.structure.Package, logger: logging.Logger):
     """Check if the mirror is up to date"""
     os.setgid(mirror.conf.gid)
     os.setuid(mirror.conf.uid)
