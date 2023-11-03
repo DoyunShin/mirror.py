@@ -25,3 +25,12 @@ def crontab(user, config):
     config = mirror.config.load(config)
     crontab = mirror.crontab.generate(config, user)
     print(crontab)
+
+@main.command("daemon")
+@click.argument("config", default="/etc/mirror/daemon.json")
+def daemon(config):
+    """
+    Run the daemon.
+    """
+    mirror.config.daemon_load(config)
+    mirror.daemon.run()
