@@ -11,10 +11,10 @@ with open("requirements.txt", "r") as fh:
     install_requires = fh.read().splitlines()
 
 setuptools.setup(
-    name="TDBRecord",
+    name="mirror.py",
     version=version,
-    author="onTDB",
-    author_email="pypi@ontdb.com",
+    author="Roul",
+    author_email="geoul@sparcs.org",
     description="Mirror Manager written in python",
     long_description=long_description,
     long_description_content_type="text/markdown",

@@ -5,6 +5,7 @@ from pathlib import Path
 
 BasicMethodPath = Path(__file__).parent
 methods = [method.stem for method in BasicMethodPath.glob("*.py") if method.stem != "__init__"]
+now = []
 
 def loader(methodPath: Path) -> None:
     """Load the sync moodules"""

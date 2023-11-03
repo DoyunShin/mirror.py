@@ -43,7 +43,7 @@ DEFAULT_CONFIG = {
             "name": "onTDB Mirror",
             "id": "mirror",
             "href": "/mirror",
-            "synctype": "FFTS",
+            "synctype": "rsync",
             "syncrate": "PT1H",
             "link": [
                 {
@@ -61,7 +61,6 @@ DEFAULT_CONFIG = {
             ],
             "settings": {
                 "hidden": False,
-                "type": "FFTS",
                 "src": "rsync://test.org/mirror", # ftp://test.org/mirror
                 "dst": "/disk/mirror",
                 "options": {
@@ -74,18 +73,22 @@ DEFAULT_CONFIG = {
 }
 
 DEF_CONF_PATH = Path("/etc/mirror/config.json")
+DEF_DATA_PATH = Path("/etc/mirror/data.json")
 DEF_STATUS_PATH = Path("/etc/mirror/status.json")
+CONFIG_PATH: Path = None
+DATA_PATH: Path = None
+STATUS_PATH: Path = None
 
 def load_config(configPath: Path = DEF_CONF_PATH):
     """Load the configuration file"""
     if not configPath.exists():
         raise FileNotFoundError(f"{configPath} does not exist! Please initialize the mirror first.")
     config = json.loads(configPath.read_text())
-    if not DEF_STATUS_PATH.exists():
+    if not DEF_DATA_PATH.exists():
         for package in config["packages"]:
             package["status"] = "ERROR"
-        DEF_STATUS_PATH.write_text(json.dumps(config["packages"]))
-    status = json.loads(DEF_STATUS_PATH.read_text())
+        DEF_DATA_PATH.write_text(json.dumps(config["packages"]))
+    status = json.loads(DEF_DATA_PATH.read_text())
 
     conflist = list(config["packages"].keys())
     statuslist = list(status["packages"].keys())
@@ -99,7 +102,7 @@ def load_config(configPath: Path = DEF_CONF_PATH):
     if statuslist:
         mirror.logger.warning(f"Status file has extra packages: {statuslist}. You might need to delete manually.")
     
-    DEF_STATUS_PATH.write_text(json.dumps(config))
+    DEF_DATA_PATH.write_text(json.dumps(config))
     
 
 
@@ -107,4 +110,6 @@ def load_config(configPath: Path = DEF_CONF_PATH):
 
     mirror.settings = mirror.config.Settings(config)
     
-
+def reload():
+    config = json.loads(CONFIG_PATH.read_text())
+   

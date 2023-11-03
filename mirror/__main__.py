@@ -5,6 +5,7 @@ import pathlib
 import mirror
 
 __version__ = "1.0.0-pre1"
+mirror.__version__ = __version__
 
 @click.version_option(prog_name="mirror", version=__version__)
 @click.group()

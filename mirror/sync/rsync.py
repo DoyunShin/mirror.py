@@ -13,6 +13,9 @@ name = "rsync"
 class Options(mirror.structure.Options):
     ffts: bool
     fftsfile: str
+    auth: bool
+    userid: str
+    passwd: str
 
 def entry(package: mirror.structure.Package, options: Options, logger: logging.Logger):
     mirror.status.save()
@@ -31,7 +34,7 @@ def rsync(package: mirror.structure.Package, logger: logging.Logger):
         "--delete-delay",
         "--delay-updates",
         f'--log-file="{str(logfile)}"'
-        f'"{package.settings.src}::{package.settings.path}"',
+        f'"{package.settings.src}"',
         f'"{package.settings.dst}"',
     ]
 
