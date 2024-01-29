@@ -3,6 +3,12 @@ import mirror
 from pathlib import Path
 import json
 
+DEFAULT_DAEMON_CONFIG = {
+    "config": "/etc/mirror/config.json",
+    "data": "/etc/mirror/data.json",
+    "status": "/etc/mirror/status.json",
+}
+
 DEFAULT_CONFIG = {
     "mirrorname": "My Mirror",
     "settings": {
@@ -72,23 +78,24 @@ DEFAULT_CONFIG = {
     }
 }
 
-DEF_CONF_PATH = Path("/etc/mirror/config.json")
-DEF_DATA_PATH = Path("/etc/mirror/data.json")
-DEF_STATUS_PATH = Path("/etc/mirror/status.json")
 CONFIG_PATH: Path = None
 DATA_PATH: Path = None
 STATUS_PATH: Path = None
 
-def load_config(configPath: Path = DEF_CONF_PATH):
+def load_config():
     """Load the configuration file"""
-    if not configPath.exists():
-        raise FileNotFoundError(f"{configPath} does not exist! Please initialize the mirror first.")
-    config = json.loads(configPath.read_text())
-    if not DEF_DATA_PATH.exists():
+
+    if CONFIG_PATH == None or DATA_PATH == None or STATUS_PATH == None:
+        raise Exception("CONFIG_PATH, DATA_PATH, STATUS_PATH is not set.")
+        
+    if not CONFIG_PATH.exists():
+        raise FileNotFoundError(f"{CONFIG_PATH} does not exist! Please initialize the mirror first.")
+    config = json.loads(CONFIG_PATH.read_text())
+    if not DATA_PATH.exists():
         for package in config["packages"]:
             package["status"] = "ERROR"
-        DEF_DATA_PATH.write_text(json.dumps(config["packages"]))
-    status = json.loads(DEF_DATA_PATH.read_text())
+        DATA_PATH.write_text(json.dumps(config["packages"]))
+    status = json.loads(DATA_PATH.read_text())
 
     conflist = list(config["packages"].keys())
     statuslist = list(status["packages"].keys())
@@ -102,7 +109,7 @@ def load_config(configPath: Path = DEF_CONF_PATH):
     if statuslist:
         mirror.logger.warning(f"Status file has extra packages: {statuslist}. You might need to delete manually.")
     
-    DEF_DATA_PATH.write_text(json.dumps(config))
+    DATA_PATH.write_text(json.dumps(config))
     
 
 
@@ -112,4 +119,3 @@ def load_config(configPath: Path = DEF_CONF_PATH):
     
 def reload():
     config = json.loads(CONFIG_PATH.read_text())
-   
