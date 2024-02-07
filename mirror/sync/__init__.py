@@ -1,11 +1,29 @@
 import mirror
+import mirror.structure
+
+import types
+import logging
+import os
 
 from importlib.machinery import SourceFileLoader
+from threading import Thread
 from pathlib import Path
 
 BasicMethodPath = Path(__file__).parent
 methods = [method.stem for method in BasicMethodPath.glob("*.py") if method.stem != "__init__"]
 now = []
+
+class Options:
+    def __init__(self, method):
+        self.options: dict[str, type] = method.options
+        for key in self.options.keys():
+            setattr(self, key, None)
+    
+    def copy(self):
+        new = Options()
+        for key in self.options.keys():
+            setattr(new, key, getattr(self, key))
+        return new
 
 def loader(methodPath: Path) -> None:
     """Load the sync moodules"""
@@ -17,3 +35,27 @@ def loader(methodPath: Path) -> None:
 def load_default():
     """Load the default sync moodules"""
     loader(BasicMethodPath)
+
+def execute(package: mirror.structure.Package, logger: logging.Logger, method: types.ModuleType):
+    """
+    Run the Sync method (CORE)
+    Args:
+        package (mirror.structure.Package): Package object
+        logger (logging.Logger): Logger object
+        method (types.ModuleType): Sync method
+    Returns:
+        Null
+    """
+    getattr(mirror.sync, method).execute(package, logger)
+
+def _execute(package: mirror.structure.Package, logger: logging.Logger, method: types.ModuleType) -> bool:
+    """
+    execute with threading
+    """
+
+def setexecuser(uid: int, gid: int):
+    def setids():
+        os.setgid(gid)
+        os.setuid(uid)
+
+    return setids

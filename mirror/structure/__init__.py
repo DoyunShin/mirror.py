@@ -1,10 +1,26 @@
+from __future__ import annotations
+
 import mirror
 import mirror.toolbox
 
 from pathlib import Path
 import json
 import time
-import re
+import logging
+
+class SyncExecuter:
+    def __init__(self, package: Package) -> None:
+        self.package = package
+        self.settings = package.settings
+    
+    def sync(self) -> None:
+        pass
+
+class Worker:
+    def __init__(self, package: Package, execute, logger: logging.Logger) -> None:
+        self.package = package
+        self.logger = logger
+        self.sync = SyncExecuter(package)
 
 class Options:
     keys: list[str]
@@ -26,7 +42,6 @@ class PackageSettings(Options):
     dst: str
     options: Options
 
-
 class Package:
     class Link(Options):
         rel: str
@@ -36,7 +51,6 @@ class Package:
         lastsynclog: str
         lastsuccesslog: str
         errorcount: int
-
 
     pkgid: str
     name: str
@@ -56,12 +70,12 @@ class Package:
             self.synctype = config["synctype"]
         else:
             raise ValueError(f"Sync type not in {mirror.sync.methods}")
-        self.syncrate = mirror.toolbox.iso8601_parser(config["syncrate"])
+        self.syncrate = mirror.toolbox.iso_duration_parser(config["syncrate"])
         self.link = []
         for link in config["link"]:
             self.link.append(self.Link(link))
         self.settings = PackageSettings(config["settings"])
-        #self.original = config
+        self.statusinfo = self.StatusInfo(config["statusinfo"])
 
     def __str__(self) -> str:
         return self.id
@@ -69,11 +83,14 @@ class Package:
     def set_status(self, status) -> None:
         if status == self.status: return
         statuslist = ["ACTIVE", "ERROR", "SYNC", "UNKNOWN"]
-        if status in statuslist:
-            self.status = status
-            self.timestamp = time.time() * 1000
-        else:
+        if status not in statuslist:
             raise ValueError(f"Status not in {statuslist}")
+        
+        self.status = status
+        self.timestamp = time.time() * 1000
+
+        if status == "ERROR":
+            self.errorcount += 1
     
     def to_dict(self) -> dict:
         return {
@@ -82,7 +99,7 @@ class Package:
             "status": self.status,
             "href": self.href,
             "synctype": self.synctype,
-            "syncrate": mirror.toolbox.iso8601_maker(self.syncrate),
+            "syncrate": mirror.toolbox.iso_duration_maker(self.syncrate),
             "link": [link.to_dict() for link in self.link],
             "settings": self.settings.to_dict(),
         }

@@ -1,6 +1,7 @@
 import mirror
 
 from prompt_toolkit import PromptSession, print_formatted_text
+from prompt_toolkit.formatted_text import ANSI
 from pathlib import Path
 import logging
 import datetime
@@ -8,7 +9,7 @@ import datetime
 class PromptHandler(logging.StreamHandler):
     def emit(self, record):
         msg = self.format(record)
-        print_formatted_text(msg)
+        print_formatted_text(ANSI(msg))
 
 
 psession = PromptSession()
@@ -16,12 +17,39 @@ input = psession.prompt
 logger = logging.getLogger("mirror")
 basePath: Path = None
 
+DEFAULT_LEVEL = "INFO"
+DEFAULT_PACKAGE_LEVEL = "ERROR"
+DEFAULT_FORMAT = "[%(asctime)s] %(levelname)s # %(message)s"
+DEFAULT_PACKAGE_FORMAT = "[%(asctime)s][{package}] %(levelname)s # %(message)s"
+DEFAULT_FILE_FORMAT = {
+    "base": "/var/log/mirror",
+    "folder": "{year}/{month}/{day}",
+    "filename": "{hour}:{minute}:{second}.{microsecond}.{packageid}.log",
+    "gzip": True,
+}
+
 logger.handlers = [PromptHandler()]
 logger.setLevel(logging.INFO)
 logger.handlers[0].setFormatter(logging.Formatter("[%(asctime)s] %(levelname)s # %(message)s"))
 
-def create_logger(package: mirror.structure.Package) -> logging.Logger:
-    """Create a logger for a package"""
+def create_logger(package: mirror.structure.Package, start_time: float) -> logging.Logger:
+    """
+    Create Logger for package sync.
+
+    Args:
+        package (mirror.structure.Package): Package object
+        start_time (float): Start time of the sync
+    Returns:
+        logging.Logger: Logger object
+    """
+
+    if "packageformat" not in mirror.conf.logger:
+        mirror.conf.logger["packageformat"] = DEFAULT_PACKAGE_FORMAT
+    if "packagelevel" not in mirror.conf.logger:
+        mirror.conf.logger["packagelevel"] = DEFAULT_PACKAGE_LEVEL
+    if "fileformat" not in mirror.conf.logger:
+        mirror.conf.logger["fileformat"] = DEFAULT_FILE_FORMAT
+
     logger = logging.getLogger(f"mirror.package.{package.name}")
     formatter = logging.Formatter(mirror.conf.logger["packageformat"].format(package=package.name, packageid=package.pkgid))
     level = logging.getLevelName(mirror.conf.logger["packagelevel"])
@@ -31,7 +59,7 @@ def create_logger(package: mirror.structure.Package) -> logging.Logger:
     prompthandler.setLevel(level)
     logger.handlers = [prompthandler]
 
-    now = datetime.datetime.now()
+    now = datetime.datetime.fromtimestamp(start_time)
     folder = basePath / mirror.conf.logger["fileformat"]["folder"].format(year=now.year, month=now.month, day=now.day)
     if not folder.exists():
         folder.mkdir(parents=True)

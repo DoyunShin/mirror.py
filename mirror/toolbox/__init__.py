@@ -1,4 +1,6 @@
 import re
+import os
+from pathlib import Path
 
 def iso_duration_parser(iso8601: str) -> int: # ISO 8601 Parser
     """
@@ -33,3 +35,26 @@ def iso_duration_maker(duration: int) -> str:
             iso8601 += f"{unixtime // dates[i]}{names[i]}"
             unixtime %= dates[i]
     return iso8601
+
+def checkPermission() -> bool:
+    """
+    Check that user has root permission or sudo permission
+    Args:
+        None
+    Returns:
+        bool: True if user has root permission or sudo permission
+    """
+    if os.getuid() == 0:
+        return True
+    
+    return not os.system("sudo -n true")
+
+def is_command_exists(command: str) -> bool:
+    """
+    Check that command exists
+    Args:
+        command (str): Command to check
+    Returns:
+        bool: True if command exists
+    """
+    return not os.system(f"command -v {command} > /dev/null")

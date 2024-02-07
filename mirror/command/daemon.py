@@ -23,4 +23,3 @@ def daemon():
 
 def check_daemon():
     pass
-    
