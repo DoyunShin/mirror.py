@@ -31,5 +31,5 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          files: dist/*
-          prerelease: ${{ contains(github.ref, 'pre') }}
+          prerelease: ${{ contains(github.ref_name, 'pre') }}
+          name: Release ${{ github.ref_name }}
