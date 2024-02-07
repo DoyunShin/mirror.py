@@ -30,7 +30,30 @@ DEFAULT_FILE_FORMAT = {
 
 logger.handlers = [PromptHandler()]
 logger.setLevel(logging.INFO)
+logger.handlers[0].setLevel(logging.INFO)
 logger.handlers[0].setFormatter(logging.Formatter("[%(asctime)s] %(levelname)s # %(message)s"))
+
+def _time_formatting(line: str, usetime: datetime.datetime, pkgid: str = None) -> str:
+    """
+    Format time in the log message
+
+    Args:
+        line (str): Log message
+        usetime (datetime.datetime): Time to format
+        pkgid (str): Package ID
+    Returns:
+        str: Formatted log message
+    """
+    return line.format(
+        year=usetime.year,
+        month=usetime.month,
+        day=usetime.day,
+        hour=usetime.hour,
+        minute=usetime.minute,
+        second=usetime.second,
+        microsecond=usetime.microsecond,
+        packageid=pkgid,
+    )
 
 def create_logger(package: mirror.structure.Package, start_time: float) -> logging.Logger:
     """
@@ -57,18 +80,21 @@ def create_logger(package: mirror.structure.Package, start_time: float) -> loggi
     prompthandler = PromptHandler()
     prompthandler.setFormatter(formatter)
     prompthandler.setLevel(level)
-    logger.handlers = [prompthandler]
+    logger.addHandler(prompthandler)
 
     now = datetime.datetime.fromtimestamp(start_time)
-    folder = basePath / mirror.conf.logger["fileformat"]["folder"].format(year=now.year, month=now.month, day=now.day)
+    folder = basePath / _time_formatting(mirror.conf.logger["fileformat"]["folder"], now, package.pkgid)
     if not folder.exists():
         folder.mkdir(parents=True)
 
-    filename = folder / mirror.conf.logger["fileformat"]["filename"].format(hour=now.hour, minute=now.minute, second=now.second, microsecond=now.microsecond, packageid=package.pkgid)
+    filename = _time_formatting(mirror.conf.logger["fileformat"]["filename"], now, package.pkgid)
+    if "/" in filename: filename = filename.replace("/", "-")
+
+    filename = folder / filename
     filehandler = logging.FileHandler(filename=str(filename), encoding="utf-8")
     filehandler.setLevel(logging.INFO)
     filehandler.setFormatter(formatter)
-    logger.handlers.append(filehandler)
+    logger.addHandler(filehandler)
 
     if mirror.debug:
         logger.handlers[0].setLevel(logging.DEBUG)
@@ -84,23 +110,22 @@ def setup_logger():
     formatter = logging.Formatter(mirror.conf.logger["format"])
     logger.handlers[0].setFormatter(formatter)
 
-    basePath = Path(mirror.conf.logger["fileformat"]["base"])
+    basePath = Path(mirror.conf.logger["fileformat"]["base"]).resolve()
     if not basePath.exists():
         basePath.mkdir(parents=True)
     
     now = datetime.datetime.now()
-    folder = basePath / mirror.conf.logger["fileformat"]["folder"].format(year=now.year, month=now.month, day=now.day)
-    
+    folder = basePath / _time_formatting(mirror.conf.logger["fileformat"]["folder"], now)
     if not folder.exists():
         folder.mkdir(parents=True)
-    
     filename = folder / "master.log"
+
     filehandler = logging.FileHandler(filename=str(filename), encoding="utf-8")
+    filehandler.setLevel(logging.INFO)
     filehandler.setFormatter(formatter)
-    logger.handlers.append(filehandler)
+    logger.addHandler(filehandler)
 
     if mirror.debug:
         logger.setLevel(logging.DEBUG)
         logger.handlers[0].setLevel(logging.DEBUG)
         logger.handlers[1].setLevel(logging.DEBUG)
-        
