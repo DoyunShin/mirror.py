@@ -69,12 +69,19 @@ def rsync(logger: logging.Logger, pkgid: str, src: Path, dst: Path, auth: bool, 
         "--exclude=\"*.~tmp~\"",
         "--delete-delay",
         "--delay-updates",
-        f'--log-file="{str(logfile)}"'
-        f'"{package.settings.src}"',
-        f'"{package.settings.dst}"',
+        f'--log-file="{logger.handlers[1].baseFilename}"',
+        f'"{src}"',
+        f'"{dst}"',
     ]
 
     env = os.environ.copy()
+    if auth:
+        env["USER"] = userid
+        env["RSYNC_PASSWORD"] = passwd
+    
+    process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, preexec_fn=mirror.sync.setexecuser(mirror.conf.uid, mirror.conf.gid))
+
+    pass
     
 
 def ffts(package: mirror.structure.Package, logger: logging.Logger):
