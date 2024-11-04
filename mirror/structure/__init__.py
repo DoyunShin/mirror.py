@@ -198,3 +198,28 @@ class Config:
     
     def save(self) -> None:
         mirror.configPath.write_text(self.to_json())
+
+class Packet:
+    mode: int
+    sender: str
+    to: str
+    command: str
+
+    def load(self, data: dict) -> None:
+        self.mode = data["mode"]
+        self.sender = data["sender"]
+        self.to = data["to"]
+        self.command = data["command"]
+
+        return
+
+    def to_dict(self) -> dict:
+        return {
+            "mode": self.mode,
+            "sender": self.sender,
+            "to": self.to,
+            "command": self.command,
+        }
+    
+    def to_json(self, **kwargs) -> str:
+        return json.dumps(self.to_dict(), **kwargs)

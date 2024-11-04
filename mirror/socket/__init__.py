@@ -1,34 +1,49 @@
 import mirror
+import mirror.structure
+import json
 
 import socket
+import time
 from pathlib import Path
 
-# unix socket server
-socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-sockPath = Path("/var/run/mirror.sock")
-if sockPath.exists():
-    sockPath.unlink()
+from threading import Thread
 
-socket.bind(str(sockPath))
-socket.listen(1)
+workers: list[Thread] = []
 
-while True:
-    connection, address = socket.accept()
-    data = connection.recv(1024)
-    if data:
-        data = data.decode("utf-8")
-        if data == "reload":
-            mirror.reload()
-            connection.sendall(b"reload")
-        elif data == "save":
-            mirror.status.save()
-            connection.sendall(b"save")
-        elif data == "exit":
-            connection.sendall(b"exit")
-            break
-        else:
-            connection.sendall(b"unknown")
-    else:
-        connection.sendall(b"unknown")
-    connection.close()
+def setup():
+    pass
+
+def cleaner():
+    global workers
+    while True:
+        time.sleep(1)
+        workers = [i for i in workers if i.is_alive()]
+
+def server():
+    # unix socket server
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sockPath = Path("/var/run/mirror.sock")
+    if sockPath.exists():
+        sockPath.unlink()
+
+    sock.bind(str(sockPath))
+    sock.listen(10)
+
+    while True:
+        conn, addr = sock.accept()
+        
+
+
+def worker(conn: socket.socket):
+    while True:
+        data = conn.recv(1024)
+        if not data:
+            # log error
+            conn.close()
+        
+        pk = mirror.structure.Packet()
+        pk.load(json.loads(data.decode(encoding="UTF-8")))
+
+        # command checker
+
